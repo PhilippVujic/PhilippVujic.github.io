@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Getting Started with ml5.js</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/ml5@0.4.3/dist/ml5.min.js"></script>
+</head>
+
+<body>
+<canvas id="randomImage" height="895" width="895"></canvas>
+<input type="file" id="image">
+<button id="upload">Upload Image</button>
+
+<script>
+    const can = document.getElementById('randomImage');
+    const ctx = can.getContext('2d');
+
+    document.getElementById('upload').addEventListener('click', () => {
+        const file = document.getElementById('image').files[0];
+        // FileReader support
+        if (FileReader && file) {
+            let fr = new FileReader();
+            fr.onload = function () {
+                modelLoaded(fr.result);
+            }
+            fr.readAsDataURL(file);
+        }
+    })
+
+    const detectionOptions = {
+        withLandmarks: true,
+        withDescriptors: false,
+    };
+
+    const faceapi = ml5.faceApi(detectionOptions, modelLoaded);
+
+    function modelLoaded(imgSrc) {
+        let img = new Image();
+        img.src = imgSrc ? imgSrc : '30571295_1703431106358637_1432467375030050805_n.jpg';
+
+        img.onload = function () {
+            ctx.drawImage(img, 0, 0, 895, 895)
+            faceapi.detect(document.getElementById('randomImage'), (err, results) => {
+                const {jawOutline, leftEye, leftEyeBrow, mouth, nose, rightEye, rightEyeBrow} = results[0].parts;
+                drawPartLines(ctx, jawOutline, hex(), false)
+                drawPartLines(ctx, mouth, hex())
+                drawPartLines(ctx, nose, hex())
+
+                let color = hex();
+                drawPartLines(ctx, leftEye, color)
+                drawPartLines(ctx, rightEye, color)
+
+                color = hex();
+                drawPartLines(ctx, leftEyeBrow, color, false)
+                drawPartLines(ctx, rightEyeBrow, color, false)
+            });
+        }
+    }
+
+    function hex() {
+        return "#" + ((1 << 24) * Math.random() | 0).toString(16)
+    }
+
+    function drawPartLines(ctx, part, hex, fullfill = true) {
+        ctx.beginPath();
+        part.forEach((cord, index) => {
+            if (index === 0 && fullfill) {
+                let length = part.length;
+                ctx.moveTo(part[length - 1].x, part[length - 1].y);
+            } else if (index !== 0) {
+                ctx.moveTo(part[index - 1].x, part[index - 1].y);
+            }
+
+            ctx.lineTo(cord.x, cord.y);
+        })
+        ctx.strokeStyle = hex;
+        ctx.lineWidth = 10;
+        ctx.stroke();
+    }
+
+</script>
+<style>
+    canvas {
+        background-position: center;
+        background-size: 100% 100%;
+    }
+</style>
+</body>
+</html>
