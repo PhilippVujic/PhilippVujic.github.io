@@ -7,9 +7,9 @@
 </head>
 
 <body>
-<canvas id="randomImage" height="895" width="895"></canvas>
-<input type="file" id="image">
+<input style="margin-bottom: 15px;" type="file" id="image">
 <button id="upload">Upload Image</button>
+<canvas id="randomImage" height="895" width="895"></canvas>
 
 <script>
     const can = document.getElementById('randomImage');
@@ -39,20 +39,31 @@
         img.src = imgSrc ? imgSrc : '30571295_1703431106358637_1432467375030050805_n.jpg';
 
         img.onload = function () {
-            ctx.drawImage(img, 0, 0, 895, 895)
+            let wrh = img.width / img.height;
+            let newWidth = can.width;
+            let newHeight = newWidth / wrh;
+            if (newHeight > can.height) {
+                newHeight = can.height;
+                newWidth = newHeight * wrh;
+            }
+            ctx.clearRect(0, 0, can.width, can.height);
+            ctx.drawImage(img, 0, 0, newWidth, newHeight)
             faceapi.detect(document.getElementById('randomImage'), (err, results) => {
-                const {jawOutline, leftEye, leftEyeBrow, mouth, nose, rightEye, rightEyeBrow} = results[0].parts;
-                drawPartLines(ctx, jawOutline, hex(), false)
-                drawPartLines(ctx, mouth, hex())
-                drawPartLines(ctx, nose, hex())
+                results = Object.values(results);
+                results.forEach(({parts}) => {
+                    const {jawOutline, leftEye, leftEyeBrow, mouth, nose, rightEye, rightEyeBrow} = parts;
+                    drawPartLines(ctx, jawOutline, hex(), false)
+                    drawPartLines(ctx, mouth, hex())
+                    drawPartLines(ctx, nose, hex())
 
-                let color = hex();
-                drawPartLines(ctx, leftEye, color)
-                drawPartLines(ctx, rightEye, color)
+                    let color = hex();
+                    drawPartLines(ctx, leftEye, color)
+                    drawPartLines(ctx, rightEye, color)
 
-                color = hex();
-                drawPartLines(ctx, leftEyeBrow, color, false)
-                drawPartLines(ctx, rightEyeBrow, color, false)
+                    color = hex();
+                    drawPartLines(ctx, leftEyeBrow, color, false)
+                    drawPartLines(ctx, rightEyeBrow, color, false)
+                })
             });
         }
     }
